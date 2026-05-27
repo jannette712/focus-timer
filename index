@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<title>Focus Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --accent: #45C585;
+    --accent-glow: rgba(69, 197, 133, 0.35);
+    --water: #3ecfcf;
+    --water-glow: rgba(62, 207, 207, 0.3);
+    --done: #5cf08a;
+    --done-glow: rgba(92, 240, 138, 0.25);
+    --text: #e8e8f0;
+    --muted: #5a5a7a;
+    --danger: #f07070;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans", sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.12;
+    pointer-events: none;
+    transition: background 1.5s ease, opacity 1.5s ease;
+  }
+  .blob-1 { width: 350px; height: 350px; top: -80px; left: -80px; background: var(--accent); }
+  .blob-2 { width: 300px; height: 300px; bottom: -60px; right: -60px; background: var(--accent); }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header { text-align: center; }
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .session-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.1em;
+    transition: color 0.3s;
+  }
+
+  /* Ring timer */
+  .ring-container {
+    position: relative;
+    width: 240px;
+    height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring-svg {
+    position: absolute;
+    top: 0; left: 0;
+    transform: rotate(-90deg);
+    width: 100%; height: 100%;
+  }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 4; }
+  .ring-progress {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.8s ease;
+    filter: drop-shadow(0 0 6px var(--accent-glow));
+  }
+  .ring-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .time-display {
+    font-family: "Noto Sans", sans-serif;
+    font-size: 52px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    line-height: 1;
+    transition: color 0.3s;
+  }
+  .time-phase {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* Session dots */
+  .session-dots-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .session-dots {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .session-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    border: 1px solid var(--muted);
+    transition: background 0.5s ease, box-shadow 0.5s ease, border-color 0.5s ease;
+  }
+  .session-dot.done {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  .session-dot.current {
+    border-color: var(--accent);
+    animation: dotpulse 2s infinite;
+  }
+  @keyframes dotpulse {
+    0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+    50% { box-shadow: 0 0 0 4px var(--accent-glow); }
+  }
+  .session-dots-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .btn {
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn:active { transform: scale(0.94); }
+  .btn-main {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 24px;
+    box-shadow: 0 0 24px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .btn-main:hover { box-shadow: 0 0 36px var(--accent-glow), 0 4px 20px rgba(0,0,0,0.5); }
+  .btn-secondary {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 18px;
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--muted); }
+
+  /* Settings */
+  .settings-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+  }
+  .setting-chip {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .setting-chip label {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .setting-chip input {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 500;
+    width: 100%;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  .setting-chip input::-webkit-outer-spin-button,
+  .setting-chip input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--text);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 100;
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Flash */
+  .flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .flash.water { background: radial-gradient(ellipse at center, rgba(62,207,207,0.15), transparent 70%); }
+  .flash.done  { background: radial-gradient(ellipse at center, rgba(92,240,138,0.15), transparent 70%); }
+  .flash.start { background: radial-gradient(ellipse at center, rgba(124,106,247,0.15), transparent 70%); }
+  .flash.eyes  { background: radial-gradient(ellipse at center, rgba(255,220,100,0.12), transparent 70%); }
+  .flash.show  { opacity: 1; }
+
+  .completed .time-display { color: var(--done); }
+  .completed .ring-progress { stroke: var(--done); filter: drop-shadow(0 0 8px var(--done-glow)); }
+</style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<div class="app" id="app">
+  <div class="header">
+    <h1>Focus Timer</h1>
+    <div class="session-label" id="sessionLabel">ready to start</div>
+  </div>
+
+  <div class="ring-container">
+    <svg class="ring-svg" viewBox="0 0 240 240">
+      <circle class="ring-bg" cx="120" cy="120" r="108"/>
+      <circle class="ring-progress" id="ringProgress" cx="120" cy="120" r="108"
+        stroke-dasharray="678.6" stroke-dashoffset="0"/>
+    </svg>
+    <div class="ring-center">
+      <div class="time-display" id="timeDisplay">45:00</div>
+      <div class="time-phase" id="timePhase">work</div>
+    </div>
+  </div>
+
+  <!-- Session dots -->
+  <div class="session-dots-row">
+    <div class="session-dots" id="sessionDots"></div>
+    <div class="session-dots-label">sessions today</div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-secondary" id="btnReset" title="Reset">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+    </button>
+    <button class="btn btn-main" id="btnPlay" title="Start">
+      <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="white">
+        <polygon points="9,5 23,14 9,23"/>
+      </svg>
+      <svg id="iconPause" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="white" style="display:none">
+        <rect x="7" y="5" width="5" height="18" rx="2"/>
+        <rect x="16" y="5" width="5" height="18" rx="2"/>
+      </svg>
+    </button>
+    <button class="btn btn-secondary" id="btnSkip" title="Skip">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 4 15 12 5 20" fill="currentColor" stroke="none"/>
+        <line x1="19" y1="4" x2="19" y2="20"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="settings-row">
+    <div class="setting-chip">
+      <label>Work (min)</label>
+      <input type="number" id="workMin" value="45" min="1" max="120">
+    </div>
+    <div class="setting-chip">
+      <label>Break (min)</label>
+      <input type="number" id="breakMin" value="10" min="1" max="30">
+    </div>
+    <div class="setting-chip">
+      <label>Water (min)</label>
+      <input type="number" id="waterMin" value="10" min="1" max="30">
+    </div>
+  </div>
+
+
+</div>
+
+<script>
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// --- Sounds ---
+function playStartSound() {
+  const ctx = getAudioCtx(), t = ctx.currentTime;
+  [523.25, 659.25].forEach((freq, i) => {
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t + i * 0.18);
+    gain.gain.setValueAtTime(0, t + i * 0.18);
+    gain.gain.linearRampToValueAtTime(0.25, t + i * 0.18 + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.18 + 0.5);
+    osc.start(t + i * 0.18); osc.stop(t + i * 0.18 + 0.55);
+  });
+}
+
+function playEndSound() {
+  const ctx = getAudioCtx(), t = ctx.currentTime;
+  [880, 698.46, 523.25].forEach((freq, i) => {
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t + i * 0.22);
+    gain.gain.setValueAtTime(0, t + i * 0.22);
+    gain.gain.linearRampToValueAtTime(0.3, t + i * 0.22 + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.22 + 0.7);
+    osc.start(t + i * 0.22); osc.stop(t + i * 0.22 + 0.75);
+  });
+}
+
+function playWaterSound() {
+  const ctx = getAudioCtx(), t = ctx.currentTime;
+  [1046.5, 1318.5].forEach((freq, i) => {
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, t + i * 0.1);
+    osc.frequency.linearRampToValueAtTime(freq * 1.05, t + i * 0.1 + 0.12);
+    gain.gain.setValueAtTime(0, t + i * 0.1);
+    gain.gain.linearRampToValueAtTime(0.18, t + i * 0.1 + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.35);
+    osc.start(t + i * 0.1); osc.stop(t + i * 0.1 + 0.4);
+  });
+}
+
+// Soft single chime for eye rest — mellow, higher, non-intrusive
+function playEyeSound() {
+  const ctx = getAudioCtx(), t = ctx.currentTime;
+  const osc = ctx.createOscillator(), gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(1174.66, t); // D6 — soft, airy
+  osc.frequency.linearRampToValueAtTime(1108.73, t + 0.4);
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(0.15, t + 0.05);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+  osc.start(t); osc.stop(t + 1);
+}
+
+// --- Icon helpers ---
+const iconPlay  = document.getElementById('iconPlay');
+const iconPause = document.getElementById('iconPause');
+function showPlayIcon()  { iconPlay.style.display=''; iconPause.style.display='none'; }
+function showPauseIcon() { iconPlay.style.display='none'; iconPause.style.display=''; }
+const TOTAL_SESSION_DOTS = 4;
+
+let state = {
+  running: false,
+  phase: 'work',
+  remaining: 0,
+  totalTime: 0,
+  waterInterval: 0,
+  eyeReminderFired: false,
+  interval: null,
+  sessions: 0,
+};
+
+// --- DOM ---
+const timeDisplay  = document.getElementById('timeDisplay');
+const timePhase    = document.getElementById('timePhase');
+const ring         = document.getElementById('ringProgress');
+const btnPlay      = document.getElementById('btnPlay');
+const btnReset     = document.getElementById('btnReset');
+const btnSkip      = document.getElementById('btnSkip');
+const workInput    = document.getElementById('workMin');
+const breakInput   = document.getElementById('breakMin');
+const waterInput   = document.getElementById('waterMin');
+const sessionDots  = document.getElementById('sessionDots');
+const sessionLabel = document.getElementById('sessionLabel');
+const toast        = document.getElementById('toast');
+const flash        = document.getElementById('flash');
+const app          = document.getElementById('app');
+
+const CIRCUMFERENCE = 2 * Math.PI * 108;
+
+function fmt(secs) {
+  return `${String(Math.floor(secs/60)).padStart(2,'0')}:${String(secs%60).padStart(2,'0')}`;
+}
+
+let toastTimer = null;
+function showToast(msg, color) {
+  toast.textContent = msg;
+  toast.style.color = color || 'var(--text)';
+  toast.style.borderColor = color || 'var(--border)';
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function flashScreen(type) {
+  flash.className = `flash ${type}`;
+  flash.style.opacity = '1';
+  setTimeout(() => { flash.style.opacity = '0'; }, 400);
+}
+
+// Build 4 session dots
+function buildSessionDots() {
+  sessionDots.innerHTML = '';
+  for (let i = 0; i < TOTAL_SESSION_DOTS; i++) {
+    const d = document.createElement('div');
+    d.className = 'session-dot';
+    sessionDots.appendChild(d);
+  }
+  updateSessionDots();
+}
+
+function updateSessionDots() {
+  const dots = sessionDots.querySelectorAll('.session-dot');
+  dots.forEach((d, i) => {
+    d.classList.remove('done', 'current');
+    if (i < state.sessions) {
+      d.classList.add('done');
+    } else if (i === state.sessions && state.phase === 'work' && state.running) {
+      d.classList.add('current');
+    }
+  });
+}
+
+function updateRing() {
+  const offset = CIRCUMFERENCE * (1 - state.remaining / state.totalTime);
+  ring.style.strokeDashoffset = offset;
+}
+
+function setPhaseColors(phase) {
+  const b1 = document.querySelector('.blob-1');
+  const b2 = document.querySelector('.blob-2');
+  if (phase === 'break') {
+    ring.style.stroke = 'var(--water)';
+    ring.style.filter = 'drop-shadow(0 0 6px var(--water-glow))';
+    b1.style.background = b2.style.background = 'var(--water)';
+  } else if (phase === 'done') {
+    ring.style.stroke = 'var(--done)';
+    ring.style.filter = 'drop-shadow(0 0 8px var(--done-glow))';
+    b1.style.background = b2.style.background = 'var(--done)';
+  } else {
+    ring.style.stroke = 'var(--accent)';
+    ring.style.filter = 'drop-shadow(0 0 6px var(--accent-glow))';
+    b1.style.background = b2.style.background = 'var(--accent)';
+  }
+}
+
+function initTimer(phase) {
+  const workSecs  = (parseInt(workInput.value)  || 45) * 60;
+  const breakSecs = (parseInt(breakInput.value) || 10) * 60;
+  const waterSecs = (parseInt(waterInput.value) || 10) * 60;
+
+  state.phase = phase;
+  state.totalTime = phase === 'work' ? workSecs : breakSecs;
+  state.remaining = state.totalTime;
+  state.waterInterval = waterSecs;
+  state.eyeReminderFired = false;
+
+  updateRing();
+  timeDisplay.textContent = fmt(state.remaining);
+  timeDisplay.style.color = '';
+  timePhase.textContent = phase;
+  setPhaseColors(phase);
+  app.classList.remove('completed');
+  updateSessionDots();
+}
+
+function startTimer() {
+  if (state.interval) clearInterval(state.interval);
+  state.running = true;
+  showPauseIcon();
+  
+  playStartSound();
+  flashScreen('start');
+  sessionLabel.textContent = state.phase === 'work'
+    ? `session ${state.sessions + 1} · focus`
+    : `session ${state.sessions} · break`;
+  
+  updateSessionDots();
+  state.interval = setInterval(tick, 1000);
+}
+
+function pauseTimer() {
+  clearInterval(state.interval);
+  state.running = false;
+  showPlayIcon();
+  
+  
+  sessionLabel.textContent = 'paused';
+  updateSessionDots();
+}
+
+function tick() {
+  state.remaining--;
+
+  // Eye rest reminder at halfway point (only once per session)
+  if (state.phase === 'work' && !state.eyeReminderFired) {
+    const halfway = Math.floor(state.totalTime / 2);
+    if (state.remaining === halfway) {
+      state.eyeReminderFired = true;
+      playEyeSound();
+      flashScreen('eyes');
+      showToast('👁 rest your eyes — look 20ft away', 'var(--water)');
+    }
+  }
+
+  // Water reminder
+  if (state.phase === 'work' && state.remaining > 0 && state.remaining % state.waterInterval === 0) {
+    playWaterSound();
+    flashScreen('water');
+    showToast('💧 sip of water!', 'var(--water)');
+  }
+
+  updateRing();
+  timeDisplay.textContent = fmt(state.remaining);
+
+  if (state.remaining <= 0) {
+    clearInterval(state.interval);
+    state.running = false;
+    playEndSound();
+
+    if (state.phase === 'work') {
+      state.sessions++;
+      flashScreen('done');
+      app.classList.add('completed');
+      timePhase.textContent = 'done!';
+      timeDisplay.style.color = 'var(--done)';
+      setPhaseColors('done');
+      sessionLabel.textContent = `session ${state.sessions} complete ✓`;
+      
+      
+      showPlayIcon();
+      updateSessionDots();
+      showToast('🎉 session complete! take a break.', 'var(--done)');
+      setTimeout(() => {
+        initTimer('break');
+        sessionLabel.textContent = 'break time — press play';
+        
+        showPlayIcon();
+      }, 3000);
+    } else {
+      initTimer('work');
+      sessionLabel.textContent = 'break done — press play';
+      
+      showPlayIcon();
+      showToast('✦ break over — ready to focus', 'var(--accent)');
+    }
+  }
+}
+
+// --- Wake Lock ---
+let wakeLock = null;
+let wakeLockHeartbeat = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    if (wakeLock) { try { await wakeLock.release(); } catch(e) {} }
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch(e) {}
+}
+
+async function releaseWakeLock() {
+  stopWakeLockHeartbeat();
+  if (wakeLock) { try { await wakeLock.release(); } catch(e) {} wakeLock = null; }
+}
+
+function startWakeLockHeartbeat() {
+  stopWakeLockHeartbeat();
+  // Re-request every 25s — Android Chrome silently drops it after ~30s of inactivity
+  wakeLockHeartbeat = setInterval(async () => {
+    if (state.running) await requestWakeLock();
+  }, 25000);
+}
+
+function stopWakeLockHeartbeat() {
+  if (wakeLockHeartbeat) { clearInterval(wakeLockHeartbeat); wakeLockHeartbeat = null; }
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && state.running) {
+    await requestWakeLock();
+  }
+});
+
+// --- Button handlers ---
+btnPlay.addEventListener('click', async () => {
+  getAudioCtx();
+  if (state.running) {
+    pauseTimer();
+    await releaseWakeLock();
+    stopWakeLockHeartbeat();
+  } else {
+    startTimer();
+    await requestWakeLock();
+    startWakeLockHeartbeat();
+  }
+});
+
+btnReset.addEventListener('click', async () => {
+  clearInterval(state.interval);
+  state.running = false;
+  await releaseWakeLock();
+  initTimer('work');
+  showPlayIcon();
+  
+  
+  sessionLabel.textContent = 'ready to start';
+});
+
+btnSkip.addEventListener('click', async () => {
+  clearInterval(state.interval);
+  state.running = false;
+  await releaseWakeLock();
+  const next = state.phase === 'work' ? 'break' : 'work';
+  if (state.phase === 'work') state.sessions++;
+  initTimer(next);
+  showPlayIcon();
+  
+  
+  sessionLabel.textContent = next === 'work' ? 'press play to focus' : 'press play for break';
+});
+
+[workInput, breakInput, waterInput].forEach(inp => {
+  inp.addEventListener('change', () => { if (!state.running) initTimer(state.phase); });
+});
+
+// --- Init ---
+buildSessionDots();
+initTimer('work');
+</script>
+</body>
+</html>
