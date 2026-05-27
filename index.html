@@ -596,6 +596,7 @@ function tick() {
 
     if (state.phase === 'work') {
       state.sessions++;
+      saveSessions();
       flashScreen('done');
       app.classList.add('completed');
       timePhase.textContent = 'done!';
@@ -701,8 +702,26 @@ btnSkip.addEventListener('click', async () => {
   inp.addEventListener('change', () => { if (!state.running) initTimer(state.phase); });
 });
 
+// --- Session persistence ---
+function todayKey() {
+  const d = new Date();
+  return `focus_sessions_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+}
+
+function loadSessions() {
+  try {
+    const val = localStorage.getItem(todayKey());
+    return val ? parseInt(val) : 0;
+  } catch(e) { return 0; }
+}
+
+function saveSessions() {
+  try { localStorage.setItem(todayKey(), state.sessions); } catch(e) {}
+}
+
 // --- Init ---
 buildSessionDots();
+state.sessions = loadSessions();
 initTimer('work');
 </script>
 </body>
