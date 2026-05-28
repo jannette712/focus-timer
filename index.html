@@ -9,7 +9,7 @@
 <title>Focus Timer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Syne:wght@400..800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0a0a0f;
@@ -23,7 +23,6 @@
     --done-glow: rgba(92, 240, 138, 0.25);
     --text: #e8e8f0;
     --muted: #5a5a7a;
-    --danger: #f07070;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -31,7 +30,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: "Noto Sans", sans-serif;
+    font-family: 'Syne', sans-serif;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -47,7 +46,7 @@
     filter: blur(80px);
     opacity: 0.12;
     pointer-events: none;
-    transition: background 1.5s ease, opacity 1.5s ease;
+    transition: background 1.5s ease;
   }
   .blob-1 { width: 350px; height: 350px; top: -80px; left: -80px; background: var(--accent); }
   .blob-2 { width: 300px; height: 300px; bottom: -60px; right: -60px; background: var(--accent); }
@@ -81,11 +80,10 @@
     transition: color 0.3s;
   }
 
-  /* Ring timer */
+  /* Ring */
   .ring-container {
     position: relative;
-    width: 240px;
-    height: 240px;
+    width: 240px; height: 240px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -126,44 +124,36 @@
     text-transform: uppercase;
   }
 
-  /* Session dots */
-  .session-dots-row {
+  /* Session counter */
+  .session-counter-row {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
   }
-  .session-dots {
-    display: flex;
-    gap: 12px;
-    align-items: center;
+  .session-count-number {
+    font-family: "Noto Sans", sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--accent);
+    
+    transition: color 0.3s;
   }
-  .session-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--border);
-    border: 1px solid var(--muted);
-    transition: background 0.5s ease, box-shadow 0.5s ease, border-color 0.5s ease;
-  }
-  .session-dot.done {
-    background: var(--accent);
-    border-color: var(--accent);
-    box-shadow: 0 0 10px var(--accent-glow);
-  }
-  .session-dot.current {
-    border-color: var(--accent);
-    animation: dotpulse 2s infinite;
-  }
-  @keyframes dotpulse {
-    0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
-    50% { box-shadow: 0 0 0 4px var(--accent-glow); }
-  }
-  .session-dots-label {
+  .session-count-label {
     font-size: 10px;
     color: var(--muted);
     letter-spacing: 0.18em;
-    text-transform: uppercase;
+    text-transform: uppercase;  
+  }
+  /* next break badge */
+  .next-break-badge {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    margin-top: 2px;
+  }
+  .next-break-badge span {
+    color: var(--accent);
   }
 
   /* Controls */
@@ -183,8 +173,7 @@
   }
   .btn:active { transform: scale(0.94); }
   .btn-main {
-    width: 72px;
-    height: 72px;
+    width: 72px; height: 72px;
     border-radius: 50%;
     background: var(--accent);
     color: white;
@@ -193,8 +182,7 @@
   }
   .btn-main:hover { box-shadow: 0 0 36px var(--accent-glow), 0 4px 20px rgba(0,0,0,0.5); }
   .btn-secondary {
-    width: 48px;
-    height: 48px;
+    width: 48px; height: 48px;
     border-radius: 50%;
     background: var(--surface);
     color: var(--muted);
@@ -242,8 +230,7 @@
   /* Toast */
   .toast {
     position: fixed;
-    top: 24px;
-    left: 50%;
+    top: 24px; left: 50%;
     transform: translateX(-50%) translateY(-80px);
     background: var(--surface);
     border: 1px solid var(--border);
@@ -261,8 +248,7 @@
 
   /* Flash */
   .flash {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     pointer-events: none;
     z-index: 50;
     opacity: 0;
@@ -303,10 +289,11 @@
     </div>
   </div>
 
-  <!-- Session dots -->
-  <div class="session-dots-row">
-    <div class="session-dots" id="sessionDots"></div>
-    <div class="session-dots-label">sessions today</div>
+  <!-- Session counter -->
+  <div class="session-counter-row">
+    <div class="session-count-number" id="sessionCountNumber">0</div>
+    <div class="session-count-label">sessions today</div>
+    <div class="next-break-badge" id="nextBreakBadge">next: <span>short break</span></div>
   </div>
 
   <div class="controls">
@@ -339,16 +326,18 @@
       <input type="number" id="workMin" value="45" min="1" max="120">
     </div>
     <div class="setting-chip">
-      <label>Break (min)</label>
-      <input type="number" id="breakMin" value="10" min="1" max="30">
+      <label>Short Break</label>
+      <input type="number" id="shortBreakMin" value="10" min="1" max="30">
+    </div>
+    <div class="setting-chip">
+      <label>Long Break</label>
+      <input type="number" id="longBreakMin" value="20" min="1" max="60">
     </div>
     <div class="setting-chip">
       <label>Water (min)</label>
       <input type="number" id="waterMin" value="10" min="1" max="30">
     </div>
   </div>
-
-
 </div>
 
 <script>
@@ -404,13 +393,12 @@ function playWaterSound() {
   });
 }
 
-// Soft single chime for eye rest — mellow, higher, non-intrusive
 function playEyeSound() {
   const ctx = getAudioCtx(), t = ctx.currentTime;
   const osc = ctx.createOscillator(), gain = ctx.createGain();
   osc.connect(gain); gain.connect(ctx.destination);
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(1174.66, t); // D6 — soft, airy
+  osc.frequency.setValueAtTime(1174.66, t);
   osc.frequency.linearRampToValueAtTime(1108.73, t + 0.4);
   gain.gain.setValueAtTime(0, t);
   gain.gain.linearRampToValueAtTime(0.15, t + 0.05);
@@ -423,34 +411,36 @@ const iconPlay  = document.getElementById('iconPlay');
 const iconPause = document.getElementById('iconPause');
 function showPlayIcon()  { iconPlay.style.display=''; iconPause.style.display='none'; }
 function showPauseIcon() { iconPlay.style.display='none'; iconPause.style.display=''; }
-const TOTAL_SESSION_DOTS = 4;
 
+// --- State ---
 let state = {
   running: false,
-  phase: 'work',
+  phase: 'work',       // 'work' | 'short-break' | 'long-break'
   remaining: 0,
   totalTime: 0,
   waterInterval: 0,
   eyeReminderFired: false,
   interval: null,
-  sessions: 0,
+  sessions: 0,         // completed work sessions today
 };
 
 // --- DOM ---
-const timeDisplay  = document.getElementById('timeDisplay');
-const timePhase    = document.getElementById('timePhase');
-const ring         = document.getElementById('ringProgress');
-const btnPlay      = document.getElementById('btnPlay');
-const btnReset     = document.getElementById('btnReset');
-const btnSkip      = document.getElementById('btnSkip');
-const workInput    = document.getElementById('workMin');
-const breakInput   = document.getElementById('breakMin');
-const waterInput   = document.getElementById('waterMin');
-const sessionDots  = document.getElementById('sessionDots');
-const sessionLabel = document.getElementById('sessionLabel');
-const toast        = document.getElementById('toast');
-const flash        = document.getElementById('flash');
-const app          = document.getElementById('app');
+const timeDisplay       = document.getElementById('timeDisplay');
+const timePhase         = document.getElementById('timePhase');
+const ring              = document.getElementById('ringProgress');
+const btnPlay           = document.getElementById('btnPlay');
+const btnReset          = document.getElementById('btnReset');
+const btnSkip           = document.getElementById('btnSkip');
+const workInput         = document.getElementById('workMin');
+const shortBreakInput   = document.getElementById('shortBreakMin');
+const longBreakInput    = document.getElementById('longBreakMin');
+const waterInput        = document.getElementById('waterMin');
+const sessionCountEl    = document.getElementById('sessionCountNumber');
+const nextBreakBadge    = document.getElementById('nextBreakBadge');
+const sessionLabel      = document.getElementById('sessionLabel');
+const toast             = document.getElementById('toast');
+const flash             = document.getElementById('flash');
+const app               = document.getElementById('app');
 
 const CIRCUMFERENCE = 2 * Math.PI * 108;
 
@@ -474,27 +464,25 @@ function flashScreen(type) {
   setTimeout(() => { flash.style.opacity = '0'; }, 400);
 }
 
-// Build 4 session dots
-function buildSessionDots() {
-  sessionDots.innerHTML = '';
-  for (let i = 0; i < TOTAL_SESSION_DOTS; i++) {
-    const d = document.createElement('div');
-    d.className = 'session-dot';
-    sessionDots.appendChild(d);
-  }
-  updateSessionDots();
+// --- Break logic ---
+// After odd sessions (1, 3, 5…) → short break
+// After even sessions (2, 4, 6…) → long break
+function nextBreakType() {
+  return state.sessions % 2 === 0 ? 'short-break' : 'long-break';
 }
 
-function updateSessionDots() {
-  const dots = sessionDots.querySelectorAll('.session-dot');
-  dots.forEach((d, i) => {
-    d.classList.remove('done', 'current');
-    if (i < state.sessions) {
-      d.classList.add('done');
-    } else if (i === state.sessions && state.phase === 'work' && state.running) {
-      d.classList.add('current');
-    }
-  });
+function nextBreakLabel() {
+  return state.sessions % 2 === 0 ? 'short break' : 'long break';
+}
+
+function updateSessionCounter() {
+  sessionCountEl.textContent = state.sessions;
+  if (state.phase === 'work') {
+    nextBreakBadge.style.display = '';
+    nextBreakBadge.innerHTML = `next: <span>${nextBreakLabel()}</span>`;
+  } else {
+    nextBreakBadge.style.display = 'none';
+  }
 }
 
 function updateRing() {
@@ -505,7 +493,7 @@ function updateRing() {
 function setPhaseColors(phase) {
   const b1 = document.querySelector('.blob-1');
   const b2 = document.querySelector('.blob-2');
-  if (phase === 'break') {
+  if (phase === 'short-break' || phase === 'long-break') {
     ring.style.stroke = 'var(--water)';
     ring.style.filter = 'drop-shadow(0 0 6px var(--water-glow))';
     b1.style.background = b2.style.background = 'var(--water)';
@@ -520,13 +508,23 @@ function setPhaseColors(phase) {
   }
 }
 
+function getBreakSecs(breakType) {
+  if (breakType === 'long-break') return (parseInt(longBreakInput.value) || 20) * 60;
+  return (parseInt(shortBreakInput.value) || 10) * 60;
+}
+
+function phaseLabel(phase) {
+  if (phase === 'short-break') return 'short break';
+  if (phase === 'long-break')  return 'long break';
+  return 'work';
+}
+
 function initTimer(phase) {
-  const workSecs  = (parseInt(workInput.value)  || 45) * 60;
-  const breakSecs = (parseInt(breakInput.value) || 10) * 60;
+  const workSecs  = (parseInt(workInput.value) || 45) * 60;
   const waterSecs = (parseInt(waterInput.value) || 10) * 60;
 
   state.phase = phase;
-  state.totalTime = phase === 'work' ? workSecs : breakSecs;
+  state.totalTime = phase === 'work' ? workSecs : getBreakSecs(phase);
   state.remaining = state.totalTime;
   state.waterInterval = waterSecs;
   state.eyeReminderFired = false;
@@ -534,24 +532,23 @@ function initTimer(phase) {
   updateRing();
   timeDisplay.textContent = fmt(state.remaining);
   timeDisplay.style.color = '';
-  timePhase.textContent = phase;
+  timePhase.textContent = phaseLabel(phase);
   setPhaseColors(phase);
   app.classList.remove('completed');
-  updateSessionDots();
+  updateSessionCounter();
 }
 
 function startTimer() {
   if (state.interval) clearInterval(state.interval);
   state.running = true;
   showPauseIcon();
-  
   playStartSound();
   flashScreen('start');
-  sessionLabel.textContent = state.phase === 'work'
-    ? `session ${state.sessions + 1} · focus`
-    : `session ${state.sessions} · break`;
-  
-  updateSessionDots();
+  if (state.phase === 'work') {
+    sessionLabel.textContent = `session ${state.sessions + 1} · focus`;
+  } else {
+    sessionLabel.textContent = `session ${state.sessions} · ${phaseLabel(state.phase)}`;
+  }
   state.interval = setInterval(tick, 1000);
 }
 
@@ -559,19 +556,15 @@ function pauseTimer() {
   clearInterval(state.interval);
   state.running = false;
   showPlayIcon();
-  
-  
   sessionLabel.textContent = 'paused';
-  updateSessionDots();
 }
 
 function tick() {
   state.remaining--;
 
-  // Eye rest reminder at halfway point (only once per session)
+  // Eye rest at halfway
   if (state.phase === 'work' && !state.eyeReminderFired) {
-    const halfway = Math.floor(state.totalTime / 2);
-    if (state.remaining === halfway) {
+    if (state.remaining === Math.floor(state.totalTime / 2)) {
       state.eyeReminderFired = true;
       playEyeSound();
       flashScreen('eyes');
@@ -579,7 +572,7 @@ function tick() {
     }
   }
 
-  // Water reminder
+  // Water reminder (work only)
   if (state.phase === 'work' && state.remaining > 0 && state.remaining % state.waterInterval === 0) {
     playWaterSound();
     flashScreen('water');
@@ -597,31 +590,47 @@ function tick() {
     if (state.phase === 'work') {
       state.sessions++;
       saveSessions();
+      updateSessionCounter();
       flashScreen('done');
       app.classList.add('completed');
       timePhase.textContent = 'done!';
       timeDisplay.style.color = 'var(--done)';
       setPhaseColors('done');
       sessionLabel.textContent = `session ${state.sessions} complete ✓`;
-      
-      
       showPlayIcon();
-      updateSessionDots();
-      showToast('🎉 session complete! take a break.', 'var(--done)');
+
+      const upcomingBreak = nextBreakType(); // capture before timeout
+      const breakMsg = upcomingBreak === 'long-break'
+        ? '🎉 session complete! long break earned.'
+        : '🎉 session complete! short break time.';
+      showToast(breakMsg, 'var(--done)');
+
       setTimeout(() => {
-        initTimer('break');
-        sessionLabel.textContent = 'break time — press play';
-        
+        initTimer(upcomingBreak);
+        sessionLabel.textContent = `${phaseLabel(upcomingBreak)} — press play`;
         showPlayIcon();
       }, 3000);
+
     } else {
+      // break ended
       initTimer('work');
       sessionLabel.textContent = 'break done — press play';
-      
       showPlayIcon();
       showToast('✦ break over — ready to focus', 'var(--accent)');
     }
   }
+}
+
+// --- Session persistence (resets at midnight) ---
+function todayKey() {
+  const d = new Date();
+  return `focus_sessions_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
+}
+function loadSessions() {
+  try { const v = localStorage.getItem(todayKey()); return v ? parseInt(v) : 0; } catch(e) { return 0; }
+}
+function saveSessions() {
+  try { localStorage.setItem(todayKey(), state.sessions); } catch(e) {}
 }
 
 // --- Wake Lock ---
@@ -636,28 +645,21 @@ async function requestWakeLock() {
     wakeLock.addEventListener('release', () => { wakeLock = null; });
   } catch(e) {}
 }
-
 async function releaseWakeLock() {
   stopWakeLockHeartbeat();
   if (wakeLock) { try { await wakeLock.release(); } catch(e) {} wakeLock = null; }
 }
-
 function startWakeLockHeartbeat() {
   stopWakeLockHeartbeat();
-  // Re-request every 25s — Android Chrome silently drops it after ~30s of inactivity
   wakeLockHeartbeat = setInterval(async () => {
     if (state.running) await requestWakeLock();
   }, 25000);
 }
-
 function stopWakeLockHeartbeat() {
   if (wakeLockHeartbeat) { clearInterval(wakeLockHeartbeat); wakeLockHeartbeat = null; }
 }
-
 document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'visible' && state.running) {
-    await requestWakeLock();
-  }
+  if (document.visibilityState === 'visible' && state.running) await requestWakeLock();
 });
 
 // --- Button handlers ---
@@ -680,8 +682,6 @@ btnReset.addEventListener('click', async () => {
   await releaseWakeLock();
   initTimer('work');
   showPlayIcon();
-  
-  
   sessionLabel.textContent = 'ready to start';
 });
 
@@ -689,38 +689,24 @@ btnSkip.addEventListener('click', async () => {
   clearInterval(state.interval);
   state.running = false;
   await releaseWakeLock();
-  const next = state.phase === 'work' ? 'break' : 'work';
-  if (state.phase === 'work') state.sessions++;
-  initTimer(next);
+  if (state.phase === 'work') {
+    const breakType = nextBreakType();
+    state.sessions++;
+    saveSessions();
+    initTimer(breakType);
+    sessionLabel.textContent = `${phaseLabel(breakType)} — press play`;
+  } else {
+    initTimer('work');
+    sessionLabel.textContent = 'press play to focus';
+  }
   showPlayIcon();
-  
-  
-  sessionLabel.textContent = next === 'work' ? 'press play to focus' : 'press play for break';
 });
 
-[workInput, breakInput, waterInput].forEach(inp => {
+[workInput, shortBreakInput, longBreakInput, waterInput].forEach(inp => {
   inp.addEventListener('change', () => { if (!state.running) initTimer(state.phase); });
 });
 
-// --- Session persistence ---
-function todayKey() {
-  const d = new Date();
-  return `focus_sessions_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
-}
-
-function loadSessions() {
-  try {
-    const val = localStorage.getItem(todayKey());
-    return val ? parseInt(val) : 0;
-  } catch(e) { return 0; }
-}
-
-function saveSessions() {
-  try { localStorage.setItem(todayKey(), state.sessions); } catch(e) {}
-}
-
 // --- Init ---
-buildSessionDots();
 state.sessions = loadSessions();
 initTimer('work');
 </script>
