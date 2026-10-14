@@ -468,11 +468,11 @@ function flashScreen(type) {
 // After odd sessions (1, 3, 5…) → short break
 // After even sessions (2, 4, 6…) → long break
 function nextBreakType() {
-  return state.sessions % 2 === 0 ? 'short-break' : 'long-break';
+  return state.sessions % 2 === 0 ? 'long-break' : 'short-break';
 }
 
 function nextBreakLabel() {
-  return state.sessions % 2 === 0 ? 'short break' : 'long break';
+  return state.sessions % 2 === 0 ? 'long break' : 'short break';
 }
 
 function updateSessionCounter() {
