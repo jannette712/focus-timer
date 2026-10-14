@@ -5,24 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0a0f">
+<meta name="theme-color" content="#0e0a08">
 <title>Focus Timer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Syne:wght@400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Noto+Sans:wght@300;400;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --border: #1e1e2e;
-    --accent: #45C585;
-    --accent-glow: rgba(69, 197, 133, 0.35);
-    --water: #3ecfcf;
-    --water-glow: rgba(62, 207, 207, 0.3);
-    --done: #5cf08a;
-    --done-glow: rgba(92, 240, 138, 0.25);
-    --text: #e8e8f0;
-    --muted: #5a5a7a;
+    --bg: #0a0805;
+    --surface: #1a1410;
+    --border: #2e2318;
+    --crimson: #9b2335;
+    --crimson-glow: rgba(155, 35, 53, 0.28);
+    --water: #3a8c8c;
+    --water-glow: rgba(58, 140, 140, 0.25);
+    --done: #7db87a;
+    --done-glow: rgba(125, 184, 122, 0.22);
+    --text: #ede0cc;
+    --muted: #6b5e52;
+    --accent: #ecbf6c;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -30,7 +31,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Syne', sans-serif;
+    font-family: 'Cormorant Garamond', serif;
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -40,16 +41,28 @@
     position: relative;
   }
 
-  .blob {
+  /* Grain texture */
+  body::before {
+    content: '';
     position: fixed;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.12;
+    inset: 0;
     pointer-events: none;
-    transition: background 1.5s ease;
+    z-index: 0;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 128px 128px;
   }
-  .blob-1 { width: 350px; height: 350px; top: -80px; left: -80px; background: var(--accent); }
-  .blob-2 { width: 300px; height: 300px; bottom: -60px; right: -60px; background: var(--accent); }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,0.6) 100%);
+  }
 
   .app {
     width: 100%;
@@ -65,18 +78,20 @@
 
   .header { text-align: center; }
   .header h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 25px;
+    font-weight: 500;
+    font-style: italic;
+    letter-spacing: 0.08em;
     color: var(--accent);
   }
   .session-label {
-    font-size: 11px;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 300;
     color: var(--muted);
     margin-top: 4px;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.14em;
     transition: color 0.3s;
   }
 
@@ -94,14 +109,14 @@
     transform: rotate(-90deg);
     width: 100%; height: 100%;
   }
-  .ring-bg { fill: none; stroke: var(--border); stroke-width: 4; }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 1.5; }
   .ring-progress {
     fill: none;
-    stroke: var(--accent);
-    stroke-width: 4;
-    stroke-linecap: round;
+    stroke: var(--crimson);
+    stroke-width: 1.5;
+    stroke-linecap: butt;
     transition: stroke-dashoffset 1s linear, stroke 0.8s ease;
-    filter: drop-shadow(0 0 6px var(--accent-glow));
+    filter: drop-shadow(0 0 5px var(--crimson-glow));
   }
   .ring-center {
     display: flex;
@@ -112,49 +127,62 @@
   .time-display {
     font-family: "Noto Sans", sans-serif;
     font-size: 52px;
-    font-weight: 800;
+    font-weight: 300;
     letter-spacing: -2px;
     line-height: 1;
     transition: color 0.3s;
   }
   .time-phase {
-    font-size: 11px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-style: italic;
     color: var(--muted);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
-  /* Session counter */
-  .session-counter-row {
+  /* Divider */
+  .divider {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--border);
+    margin-top: -14px;
+    margin-bottom: -14px;
+  }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .divider-mark { font-size: 8px; color: var(--muted); line-height: 1; }
+
+  /* Time counter */
+  .time-counter-row {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 4px;
   }
-  .session-count-number {
-    font-family: "Noto Sans", sans-serif;
-    font-size: 36px;
-    font-weight: 800;
-    color: var(--accent);
-    
+  .time-count-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 38px;
+    font-weight: 300;
+    color: var(--crimson);
     transition: color 0.3s;
+    line-height: 1;
   }
-  .session-count-label {
-    font-size: 10px;
+  .time-count-label {
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 300;
     color: var(--muted);
     letter-spacing: 0.18em;
-    text-transform: uppercase;  
   }
-  /* next break badge */
   .next-break-badge {
-    font-size: 10px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    font-style: italic;
     color: var(--muted);
-    letter-spacing: 0.12em;
     margin-top: 2px;
   }
-  .next-break-badge span {
-    color: var(--accent);
-  }
+  .next-break-badge span { color: var(--text); }
 
   /* Controls */
   .controls {
@@ -165,7 +193,7 @@
   .btn {
     border: none;
     cursor: pointer;
-    font-family: 'Syne', sans-serif;
+    font-family: 'Cormorant Garamond', serif;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
@@ -175,16 +203,17 @@
   .btn-main {
     width: 72px; height: 72px;
     border-radius: 50%;
-    background: var(--accent);
-    color: white;
+    background: var(--crimson);
+    color: var(--text);
     font-size: 24px;
-    box-shadow: 0 0 24px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.4);
+    border: 1px solid rgba(155, 35, 53, 0.4);
+    box-shadow: 0 0 24px var(--crimson-glow), 0 4px 16px rgba(0,0,0,0.5);
   }
-  .btn-main:hover { box-shadow: 0 0 36px var(--accent-glow), 0 4px 20px rgba(0,0,0,0.5); }
+  .btn-main:hover { box-shadow: 0 0 36px var(--crimson-glow), 0 4px 20px rgba(0,0,0,0.6); }
   .btn-secondary {
     width: 48px; height: 48px;
     border-radius: 50%;
-    background: var(--surface);
+    background: transparent;
     color: var(--muted);
     font-size: 18px;
     border: 1px solid var(--border);
@@ -201,25 +230,26 @@
     flex: 1;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 4px;
     padding: 12px 14px;
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
   .setting-chip label {
-    font-size: 9px;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 300;
     color: var(--muted);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
+    letter-spacing: 0.14em;
   }
   .setting-chip input {
     background: none;
     border: none;
     color: var(--text);
-    font-family: 'Syne', sans-serif;
+    font-family: 'Cormorant Garamond', serif;
     font-size: 20px;
-    font-weight: 500;
+    font-weight: 400;
     width: 100%;
     outline: none;
     -moz-appearance: textfield;
@@ -234,15 +264,17 @@
     transform: translateX(-50%) translateY(-80px);
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 20px;
-    font-size: 12px;
-    letter-spacing: 0.1em;
+    border-radius: 4px;
+    padding: 10px 18px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    font-style: italic;
+    letter-spacing: 0.04em;
     color: var(--text);
     transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: 100;
     white-space: nowrap;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
@@ -254,10 +286,10 @@
     opacity: 0;
     transition: opacity 0.1s;
   }
-  .flash.water { background: radial-gradient(ellipse at center, rgba(62,207,207,0.15), transparent 70%); }
-  .flash.done  { background: radial-gradient(ellipse at center, rgba(92,240,138,0.15), transparent 70%); }
-  .flash.start { background: radial-gradient(ellipse at center, rgba(124,106,247,0.15), transparent 70%); }
-  .flash.eyes  { background: radial-gradient(ellipse at center, rgba(255,220,100,0.12), transparent 70%); }
+  .flash.water { background: radial-gradient(ellipse at center, rgba(58,140,140,0.12), transparent 70%); }
+  .flash.done  { background: radial-gradient(ellipse at center, rgba(125,184,122,0.12), transparent 70%); }
+  .flash.start { background: radial-gradient(ellipse at center, rgba(155,35,53,0.10), transparent 70%); }
+  .flash.eyes  { background: radial-gradient(ellipse at center, rgba(237,224,204,0.08), transparent 70%); }
   .flash.show  { opacity: 1; }
 
   .completed .time-display { color: var(--done); }
@@ -266,8 +298,6 @@
 </head>
 <body>
 
-<div class="blob blob-1"></div>
-<div class="blob blob-2"></div>
 <div class="flash" id="flash"></div>
 <div class="toast" id="toast"></div>
 
@@ -285,14 +315,20 @@
     </svg>
     <div class="ring-center">
       <div class="time-display" id="timeDisplay">45:00</div>
-      <div class="time-phase" id="timePhase">work</div>
+      <div class="time-phase" id="timePhase">Focus</div>
     </div>
   </div>
 
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-mark">◆</div>
+    <div class="divider-line"></div>
+  </div>
+
   <!-- Session counter -->
-  <div class="session-counter-row">
-    <div class="session-count-number" id="sessionCountNumber">0</div>
-    <div class="session-count-label">sessions today</div>
+  <div class="time-counter-row">
+    <div class="time-count-number" id="sessionCountNumber">0</div>
+    <div class="time-count-label">Time worked today</div>
     <div class="next-break-badge" id="nextBreakBadge">next: <span>short break</span></div>
   </div>
 
@@ -304,10 +340,10 @@
       </svg>
     </button>
     <button class="btn btn-main" id="btnPlay" title="Start">
-      <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="white">
+      <svg id="iconPlay" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="currentColor">
         <polygon points="9,5 23,14 9,23"/>
       </svg>
-      <svg id="iconPause" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="white" style="display:none">
+      <svg id="iconPause" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="currentColor" style="display:none">
         <rect x="7" y="5" width="5" height="18" rx="2"/>
         <rect x="16" y="5" width="5" height="18" rx="2"/>
       </svg>
@@ -322,7 +358,7 @@
 
   <div class="settings-row">
     <div class="setting-chip">
-      <label>Work (min)</label>
+      <label>Focus (min)</label>
       <input type="number" id="workMin" value="45" min="1" max="120">
     </div>
     <div class="setting-chip">
@@ -334,7 +370,7 @@
       <input type="number" id="longBreakMin" value="20" min="1" max="60">
     </div>
     <div class="setting-chip">
-      <label>Water (every X mins)</label>
+      <label>Water <span style="font-size: 9px;">(every X mins)</span></label>
       <input type="number" id="waterMin" value="10" min="1" max="30">
     </div>
   </div>
@@ -419,9 +455,10 @@ let state = {
   remaining: 0,
   totalTime: 0,
   waterInterval: 0,
-  eyeReminderFired: false,
   interval: null,
   sessions: 0,         // completed work sessions today
+  workBlocks: 0,       // raw work blocks completed (internal)
+  workedSecs: 0,       // total seconds of work completed today
 };
 
 // --- DOM ---
@@ -468,15 +505,22 @@ function flashScreen(type) {
 // After odd sessions (1, 3, 5…) → short break
 // After even sessions (2, 4, 6…) → long break
 function nextBreakType() {
-  return (state.sessions + 1) % 2 === 0 ? 'short-break' : 'long-break';
+  return state.workBlocks % 2 === 0 ? 'short-break' : 'long-break';
 }
 
 function nextBreakLabel() {
-  return (state.sessions + 1) % 2 === 0 ? 'long break' : 'short break';
+  return state.workBlocks % 2 === 0 ? 'short break' : 'long break';
+}
+
+function fmtWorked(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 function updateSessionCounter() {
-  sessionCountEl.textContent = state.sessions;
+  sessionCountEl.textContent = fmtWorked(state.workedSecs);
   if (state.phase === 'work') {
     nextBreakBadge.style.display = '';
     nextBreakBadge.innerHTML = `next: <span>${nextBreakLabel()}</span>`;
@@ -491,20 +535,18 @@ function updateRing() {
 }
 
 function setPhaseColors(phase) {
-  const b1 = document.querySelector('.blob-1');
-  const b2 = document.querySelector('.blob-2');
   if (phase === 'short-break' || phase === 'long-break') {
     ring.style.stroke = 'var(--water)';
     ring.style.filter = 'drop-shadow(0 0 6px var(--water-glow))';
-    b1.style.background = b2.style.background = 'var(--water)';
+    sessionCountEl.style.color = 'var(--water)';
   } else if (phase === 'done') {
     ring.style.stroke = 'var(--done)';
     ring.style.filter = 'drop-shadow(0 0 8px var(--done-glow))';
-    b1.style.background = b2.style.background = 'var(--done)';
+    sessionCountEl.style.color = 'var(--done)';
   } else {
-    ring.style.stroke = 'var(--accent)';
-    ring.style.filter = 'drop-shadow(0 0 6px var(--accent-glow))';
-    b1.style.background = b2.style.background = 'var(--accent)';
+    ring.style.stroke = 'var(--crimson)';
+    ring.style.filter = 'drop-shadow(0 0 6px var(--crimson-glow))';
+    sessionCountEl.style.color = 'var(--crimson)';
   }
 }
 
@@ -514,9 +556,9 @@ function getBreakSecs(breakType) {
 }
 
 function phaseLabel(phase) {
-  if (phase === 'short-break') return 'short break';
-  if (phase === 'long-break')  return 'long break';
-  return 'work';
+  if (phase === 'short-break') return 'Short break';
+  if (phase === 'long-break')  return 'Long break';
+  return 'Focus';
 }
 
 function initTimer(phase) {
@@ -527,8 +569,6 @@ function initTimer(phase) {
   state.totalTime = phase === 'work' ? workSecs : getBreakSecs(phase);
   state.remaining = state.totalTime;
   state.waterInterval = waterSecs;
-  state.eyeReminderFired = false;
-
   updateRing();
   timeDisplay.textContent = fmt(state.remaining);
   timeDisplay.style.color = '';
@@ -588,7 +628,9 @@ function tick() {
     playEndSound();
 
     if (state.phase === 'work') {
-      state.sessions++;
+      state.workBlocks++;
+      state.sessions = Math.floor(state.workBlocks / 2);
+      state.workedSecs += state.totalTime;
       saveSessions();
       updateSessionCounter();
       flashScreen('done');
@@ -616,7 +658,7 @@ function tick() {
       initTimer('work');
       sessionLabel.textContent = 'break done — press play';
       showPlayIcon();
-      showToast('✦ break over — ready to focus', 'var(--accent)');
+      showToast('✦ break over — ready to focus', 'var(--crimson)');
     }
   }
 }
@@ -627,10 +669,18 @@ function todayKey() {
   return `focus_sessions_${d.getFullYear()}_${d.getMonth()}_${d.getDate()}`;
 }
 function loadSessions() {
-  try { const v = localStorage.getItem(todayKey()); return v ? parseInt(v) : 0; } catch(e) { return 0; }
+  try {
+    const v = localStorage.getItem(todayKey());
+    return v ? JSON.parse(v) : { workBlocks: 0, workedSecs: 0 };
+  } catch(e) { return { workBlocks: 0, workedSecs: 0 }; }
 }
 function saveSessions() {
-  try { localStorage.setItem(todayKey(), state.sessions); } catch(e) {}
+  try {
+    localStorage.setItem(todayKey(), JSON.stringify({
+      workBlocks: state.workBlocks,
+      workedSecs: state.workedSecs
+    }));
+  } catch(e) {}
 }
 
 // --- Wake Lock ---
@@ -691,7 +741,9 @@ btnSkip.addEventListener('click', async () => {
   await releaseWakeLock();
   if (state.phase === 'work') {
     const breakType = nextBreakType();
-    state.sessions++;
+    state.workBlocks++;
+    state.sessions = Math.floor(state.workBlocks / 2);
+    state.workedSecs += state.remaining; // count whatever was left
     saveSessions();
     initTimer(breakType);
     sessionLabel.textContent = `${phaseLabel(breakType)} — press play`;
@@ -707,7 +759,10 @@ btnSkip.addEventListener('click', async () => {
 });
 
 // --- Init ---
-state.sessions = loadSessions();
+const saved = loadSessions();
+state.workBlocks = saved.workBlocks;
+state.workedSecs = saved.workedSecs;
+state.sessions   = Math.floor(state.workBlocks / 2);
 initTimer('work');
 </script>
 </body>
