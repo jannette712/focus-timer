@@ -12,18 +12,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Noto+Sans:wght@300;400;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0805;
+    --bg: #0e0a08;
     --surface: #1a1410;
     --border: #2e2318;
-    --crimson: #9b2335;
-    --crimson-glow: rgba(155, 35, 53, 0.28);
+    --accent: #9b2335;
+    --accent-glow: rgba(155, 35, 53, 0.28);
     --water: #3a8c8c;
     --water-glow: rgba(58, 140, 140, 0.25);
     --done: #7db87a;
     --done-glow: rgba(125, 184, 122, 0.22);
     --text: #ede0cc;
     --muted: #6b5e52;
-    --accent: #ecbf6c;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -79,11 +78,11 @@
   .header { text-align: center; }
   .header h1 {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 25px;
-    font-weight: 500;
+    font-size: 22px;
+    font-weight: 300;
     font-style: italic;
     letter-spacing: 0.08em;
-    color: var(--accent);
+    color: var(--text);
   }
   .session-label {
     font-family: 'Noto Sans', sans-serif;
@@ -112,11 +111,11 @@
   .ring-bg { fill: none; stroke: var(--border); stroke-width: 1.5; }
   .ring-progress {
     fill: none;
-    stroke: var(--crimson);
+    stroke: var(--accent);
     stroke-width: 1.5;
     stroke-linecap: butt;
     transition: stroke-dashoffset 1s linear, stroke 0.8s ease;
-    filter: drop-shadow(0 0 5px var(--crimson-glow));
+    filter: drop-shadow(0 0 5px var(--accent-glow));
   }
   .ring-center {
     display: flex;
@@ -134,7 +133,7 @@
   }
   .time-phase {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 18px;
+    font-size: 14px;
     font-style: italic;
     color: var(--muted);
     letter-spacing: 0.06em;
@@ -164,7 +163,7 @@
     font-family: 'Cormorant Garamond', serif;
     font-size: 38px;
     font-weight: 300;
-    color: var(--crimson);
+    color: var(--accent);
     transition: color 0.3s;
     line-height: 1;
   }
@@ -203,13 +202,13 @@
   .btn-main {
     width: 72px; height: 72px;
     border-radius: 50%;
-    background: var(--crimson);
+    background: var(--accent);
     color: var(--text);
     font-size: 24px;
     border: 1px solid rgba(155, 35, 53, 0.4);
-    box-shadow: 0 0 24px var(--crimson-glow), 0 4px 16px rgba(0,0,0,0.5);
+    box-shadow: 0 0 24px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.5);
   }
-  .btn-main:hover { box-shadow: 0 0 36px var(--crimson-glow), 0 4px 20px rgba(0,0,0,0.6); }
+  .btn-main:hover { box-shadow: 0 0 36px var(--accent-glow), 0 4px 20px rgba(0,0,0,0.6); }
   .btn-secondary {
     width: 48px; height: 48px;
     border-radius: 50%;
@@ -238,7 +237,7 @@
   }
   .setting-chip label {
     font-family: 'Noto Sans', sans-serif;
-    font-size: 11px;
+    font-size: 8px;
     font-weight: 300;
     color: var(--muted);
     letter-spacing: 0.14em;
@@ -370,7 +369,7 @@
       <input type="number" id="longBreakMin" value="20" min="1" max="60">
     </div>
     <div class="setting-chip">
-      <label>Water <span style="font-size: 9px;">(every X mins)</span></label>
+      <label>Water <span style="font-size:6px;letter-spacing:0.1em">(every X mins)</span></label>
       <input type="number" id="waterMin" value="10" min="1" max="30">
     </div>
   </div>
@@ -459,6 +458,8 @@ let state = {
   sessions: 0,         // completed work sessions today
   workBlocks: 0,       // raw work blocks completed (internal)
   workedSecs: 0,       // total seconds of work completed today
+  startedAt: null,     // wall-clock ms when current run started
+  remainingAtStart: 0, // remaining seconds when current run started
 };
 
 // --- DOM ---
@@ -505,14 +506,15 @@ function flashScreen(type) {
 // After odd sessions (1, 3, 5…) → short break
 // After even sessions (2, 4, 6…) → long break
 function nextBreakType() {
-  return state.workBlocks % 2 === 0 ? 'short-break' : 'long-break';
+  return state.workBlocks % 2 === 1 ? 'short-break' : 'long-break';
 }
 
 function nextBreakLabel() {
-  return state.workBlocks % 2 === 0 ? 'short break' : 'long break';
+  return state.workBlocks % 2 === 1 ? 'short break' : 'long break';
 }
 
 function fmtWorked(secs) {
+  if (!secs || secs <= 0) return '0m';
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);
   if (h > 0) return `${h}h ${m}m`;
@@ -544,9 +546,9 @@ function setPhaseColors(phase) {
     ring.style.filter = 'drop-shadow(0 0 8px var(--done-glow))';
     sessionCountEl.style.color = 'var(--done)';
   } else {
-    ring.style.stroke = 'var(--crimson)';
-    ring.style.filter = 'drop-shadow(0 0 6px var(--crimson-glow))';
-    sessionCountEl.style.color = 'var(--crimson)';
+    ring.style.stroke = 'var(--accent)';
+    ring.style.filter = 'drop-shadow(0 0 6px var(--accent-glow))';
+    sessionCountEl.style.color = 'var(--accent)';
   }
 }
 
@@ -589,18 +591,28 @@ function startTimer() {
   } else {
     sessionLabel.textContent = `session ${state.sessions} · ${phaseLabel(state.phase)}`;
   }
+  state.startedAt = Date.now();
+  state.remainingAtStart = state.remaining;
   state.interval = setInterval(tick, 1000);
 }
 
 function pauseTimer() {
   clearInterval(state.interval);
   state.running = false;
+  // Capture how much time is left so resuming uses a fresh wall-clock reference
+  state.remainingAtStart = state.remaining;
+  state.startedAt = null;
   showPlayIcon();
   sessionLabel.textContent = 'paused';
 }
 
 function tick() {
-  state.remaining--;
+  if (state.startedAt !== null) {
+    const elapsed = Math.floor((Date.now() - state.startedAt) / 1000);
+    state.remaining = Math.max(0, state.remainingAtStart - elapsed);
+  } else {
+    state.remaining--;
+  }
 
   // Eye rest at halfway
    // Eye rest every 20 minutes elapsed (fires at 20min, 40min, 60min… into the session)
@@ -658,7 +670,7 @@ function tick() {
       initTimer('work');
       sessionLabel.textContent = 'break done — press play';
       showPlayIcon();
-      showToast('✦ break over — ready to focus', 'var(--crimson)');
+      showToast('✦ break over — ready to focus', 'var(--accent)');
     }
   }
 }
