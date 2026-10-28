@@ -505,12 +505,14 @@ function flashScreen(type) {
 // --- Break logic ---
 // After odd sessions (1, 3, 5…) → short break
 // After even sessions (2, 4, 6…) → long break
+// Called AFTER workBlocks++ — parity of the just-completed block
 function nextBreakType() {
   return state.workBlocks % 2 === 1 ? 'short-break' : 'long-break';
 }
 
+// Called DURING a work session — workBlocks not yet incremented, so use +1
 function nextBreakLabel() {
-  return state.workBlocks % 2 === 1 ? 'short break' : 'long break';
+  return (state.workBlocks + 1) % 2 === 1 ? 'short break' : 'long break';
 }
 
 function fmtWorked(secs) {
